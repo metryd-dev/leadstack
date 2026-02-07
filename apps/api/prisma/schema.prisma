@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Lead {
+  id           String       @id @default(cuid())
+  name         String
+  phone        String
+  message      String?
+  status       String       @default("NEW")
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  outboxEvents OutboxEvent[]
+}
+
+model Review {
+  id           String       @id @default(cuid())
+  author       String
+  content      String
+  rating       Int
+  published    Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  outboxEvents OutboxEvent[]
+}
+
+model TelegramChat {
+  id        String   @id @default(cuid())
+  chatId    String   @unique
+  title     String?
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OutboxEvent {
+  id          String    @id @default(cuid())
+  topic       String
+  payload     String
+  attempts    Int       @default(0)
+  lastError   String?
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  leadId      String?
+  reviewId    String?
+  lead        Lead?     @relation(fields: [leadId], references: [id])
+  review      Review?   @relation(fields: [reviewId], references: [id])
+
+  @@index([processedAt, createdAt])
+}
